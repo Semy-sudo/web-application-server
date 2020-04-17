@@ -16,6 +16,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;	
@@ -43,15 +44,17 @@ public class RequestHandler extends Thread {
             try(InputStream in = connection.getInputStream(); OutputStream out= connection.getOutputStream()){
             	BufferedReader br = new BufferedReader(new InputStreamReader(in,"UTF-8"));
             	
-            	String firstLine      = br.readLine();
+            	String firstLine = br.readLine();
+            	if(firstLine == null) {
+            		return ;
+            	}
+             
                 String[] arrFirstLine = firstLine.split(" ");
                
                 String httpMethod     = arrFirstLine[0];
                 String httpUrl        = arrFirstLine[1].equals("/")?"/index.html":arrFirstLine[1];
                 String httpProtocol   = arrFirstLine[2];
-               
-               
-              
+                log.debug("httpUrl: {}", httpUrl);
                 /*
                 while(!firstLine.equals("")) {
                 	firstLine = br.readLine();
@@ -64,30 +67,7 @@ public class RequestHandler extends Thread {
             	System.out.println("arrFistLine[2]: "+httpProtocol);
                 
             	
-            	//요구사항2번
-            	
-            	/*
-            	HttpRequestUtils hr = new HttpRequestUtils();
-            	Map<String, String> r = hr.parseQueryString(httpUrl);//{ 정보들...   }
-            	r.forEach((k,v) -> System.out.println("key : " + k + ", value : " + v));
-            	//key 로 value찾기
-            	//System.out.println(getKey(r,"syi9595"));// /user/create?userId
-            	//null
-            
-           
-            	
-            	//User클래스에 저장
-            	
-            	String getName = (String)r.get("name");
-            	String getID = (String)r.get("/user/create?userId");
-            	String getPassword = (String)r.get("password");
-            	String getEmail = (String)r.get("email");
-            	
-            	User user = new User(getID,getPassword,getName,getEmail);
-            	System.out.println(user.toString());
-            	*/
-            	//요구사항3번
-            	
+            	//요구사항2번//3번
             	
             	int contentLength = 0;
             	while(!firstLine.equals("")) {
@@ -102,18 +82,40 @@ public class RequestHandler extends Thread {
             		 }
             		
             	}
-            	 // System.out.println("contentLength 길이:"+contentLength);
-            	if("/user/create".equals(httpUrl)) {
+            	
+           	 	
+            	if(("/user/create".equals(httpUrl))) {
             		String body = IOUtils.readData(br, contentLength);
-            		Map<String, String> rr = HttpRequestUtils.parseQueryString(body);//{ 정보들...   }
-                	rr.forEach((k,v) -> System.out.println("key : " + k + ", value : " + v));
+            		log.debug("body:{}",body);
+            		Map<String, String> r  = HttpRequestUtils.parseQueryString(body);//{ 정보들...   }
                 	
-                	User user2 = new User(rr.get("userId"),rr.get("password"),rr.get("name"),rr.get("email"));
-               
-                	log.debug("User : {} ",user2);
                 	
+                	User user = new User(r.get("userId"),r.get("password"),r.get("name"),r.get("email"));
+                	//System.out.println("user"+user);
+                	log.debug("User : {} ",user);
+                	httpUrl = "/index.html";
                 	
             	}
+            	
+            	
+            	
+            	//System.out.println(getKey(r,"syi9595"));// /user/create?userId
+            	//null
+            
+           
+            	
+            	//User클래스에 저장
+            	/* --잘못된 부분
+            	String getName = (String)r.get("name");
+            	String getID = (String)r.get("/user/create?userId");
+            	String getPassword = (String)r.get("password");
+            	String getEmail = (String)r.get("email");
+            	
+            	User user = new User(getID,getPassword,getName,getEmail);
+            	System.out.println(user.toString());
+            	*/
+            	
+            	
             	DataOutputStream dos = new DataOutputStream(out);
             	byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath());
                 response200Header(dos, body.length);
@@ -127,10 +129,15 @@ public class RequestHandler extends Thread {
     }
 
 
-
+	Map<String,String> headers = new HashMap<String, String>();
 
 	private int getContentLength(String firstLine) {
+		
 	String[] Stringline = firstLine.split(":");
+	
+	if(Stringline.length == 2) {
+		headers.put(Stringline[0],Stringline[1]);
+	}
 	
 	return Integer.parseInt(Stringline[1].trim());//94
 }
