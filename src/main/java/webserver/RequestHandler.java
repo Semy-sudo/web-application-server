@@ -65,6 +65,7 @@ public class RequestHandler extends Thread {
                 
             	
             	//요구사항2번
+            	System.out.println("요구사항 2번");
             	/*
             	HttpRequestUtils hr = new HttpRequestUtils();
             	Map<String, String> r = hr.parseQueryString(httpUrl);//{ 정보들...   }
