@@ -1,13 +1,15 @@
 
 package webserver;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;	
 import java.io.File;
 
 import java.io.IOException;	
 import java.io.InputStream;	
 import java.io.InputStreamReader;
-import java.io.OutputStream;	
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.Socket;	
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -38,6 +40,12 @@ public class RequestHandler extends Thread {
         	
             try(InputStream in = connection.getInputStream(); OutputStream out= connection.getOutputStream()){
             	BufferedReader br = new BufferedReader(new InputStreamReader(in,"UTF-8"));
+            	
+            	//
+            	BufferedWriter brr = new BufferedWriter(new OutputStreamWriter(out,"UTF-8"));
+            	
+            	
+            	
             	
             	String firstLine = br.readLine();
             	if(firstLine == null) {
@@ -77,7 +85,7 @@ public class RequestHandler extends Thread {
             		
             	}
             	
-           	 	
+           	 	// /user/create 요청이 들어왔을때
             	if(("/user/create".equals(httpUrl))) {
             		String body = IOUtils.readData(br, contentLength);
             		log.debug("body:{}",body);
@@ -91,7 +99,6 @@ public class RequestHandler extends Thread {
                 	//httpUrl = "/index.html";
                 	DataOutputStream dos = new DataOutputStream(out);
                 	 
-                	
                 	response302Header(dos);
                    
                     
@@ -169,7 +176,8 @@ public class RequestHandler extends Thread {
 	private void response302Header(DataOutputStream dos) {
         try {
              dos.writeBytes("HTTP/1.1 302 OK \r\n");
-             dos.writeBytes("Location: /index.html\r\n");
+             //새 url에 대해 두번째 요청을 작성
+             dos.writeBytes("Location:  index.html \r\n");
              dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
