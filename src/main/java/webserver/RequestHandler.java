@@ -1,27 +1,22 @@
+
 package webserver;
 import java.io.BufferedReader;
-import java.io.DataOutput;
 import java.io.DataOutputStream;	
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.Flushable;
+
 import java.io.IOException;	
 import java.io.InputStream;	
 import java.io.InputStreamReader;
 import java.io.OutputStream;	
 import java.net.Socket;	
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;	
 import org.slf4j.LoggerFactory;
 
+import db.DataBase;
 import model.User;
 import util.HttpRequestUtils;
 import util.IOUtils;	
@@ -68,14 +63,13 @@ public class RequestHandler extends Thread {
                 
             	
             	//요구사항2번//3번
-            	
+            	//contentLength 길이 알아내기
             	int contentLength = 0;
             	while(!firstLine.equals("")) {
             		log.debug("body : {}", firstLine);
                 	firstLine = br.readLine();
                 	
             		 if(firstLine.contains("Content-Length")) {
-            		
             			 contentLength = getContentLength(firstLine);//94
             			 System.out.println("contentLength 길이:"+contentLength);
             			
@@ -89,37 +83,46 @@ public class RequestHandler extends Thread {
             		log.debug("body:{}",body);
             		Map<String, String> r  = HttpRequestUtils.parseQueryString(body);//{ 정보들...   }
                 	
-                	
                 	User user = new User(r.get("userId"),r.get("password"),r.get("name"),r.get("email"));
                 	//System.out.println("user"+user);
                 	log.debug("User : {} ",user);
-                	httpUrl = "/index.html";
                 	
+                	//요구사항4번
+                	//httpUrl = "/index.html";
+                	DataOutputStream dos = new DataOutputStream(out);
+                	 
+                	
+                	response302Header(dos);
+                   
+                    
+            	}else {
+
+                	DataOutputStream dos = new DataOutputStream(out);
+                	byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
+                	
+                	response200Header(dos, body.length);
+                    responseBody(dos, body);
+                    
+            		
+            		
             	}
             	
             	
             	
-            	//System.out.println(getKey(r,"syi9595"));// /user/create?userId
-            	//null
-            
-           
-            	
-            	//User클래스에 저장
-            	/* --잘못된 부분
-            	String getName = (String)r.get("name");
-            	String getID = (String)r.get("/user/create?userId");
-            	String getPassword = (String)r.get("password");
-            	String getEmail = (String)r.get("email");
-            	
-            	User user = new User(getID,getPassword,getName,getEmail);
-            	System.out.println(user.toString());
-            	*/
+            	/*
+            	if(("/user/login.html".equals(httpUrl))) {
+            		if() {
+            			
+            			httpUrl = "/index.html";
+            		}else {
+            			
+            			httpUrl = "/user/login_failed.html";
+            		}
+            		
+            	}
+               */
             	
             	
-            	DataOutputStream dos = new DataOutputStream(out);
-            	byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath());
-                response200Header(dos, body.length);
-                responseBody(dos, body);
             	
                 
             }catch(IOException e) {
@@ -156,6 +159,17 @@ public class RequestHandler extends Thread {
              dos.writeBytes("HTTP/1.1 200 OK \r\n");
              dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
              dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+           
+             dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+	//요구사항 4번
+	private void response302Header(DataOutputStream dos) {
+        try {
+             dos.writeBytes("HTTP/1.1 302 OK \r\n");
+             dos.writeBytes("Location: /index.html\r\n");
              dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
