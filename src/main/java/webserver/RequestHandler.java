@@ -10,8 +10,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
-import java.net.Socket;	
+import java.net.Socket;
+import java.net.URLDecoder;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -128,31 +130,45 @@ public class RequestHandler extends Thread {
             		String reurl ="";
             		Map C =  HttpRequestUtils.parseCookies(cookie);
             		
-            		if(Boolean.parseBoolean((String)C.get("logined"))==true) {
-            			
-            			reurl ="/user/html";
-            			DataOutputStream dos = new DataOutputStream(out);
-                    	response302HeaderA(dos,reurl,cookie);
-                    	//
-            			//StringBuilder sb = new StringBuilder(user)
-                    	
-            		}else {
+            		if(Boolean.parseBoolean((String)C.get("logined"))==false) {
+            			//로그인 실패시
             			reurl="login.html";
             			DataOutputStream dos = new DataOutputStream(out);
                     	response302HeaderB(dos,reurl);
             			
+            		}else {
+            		    //로그인 성공시
+                    	/*
+
+         		        Collection<User> userList = DataBase.findAll();
+         		        StringBuilder sb = new StringBuilder();
+         		        sb.append("<tr>");
+         		        for(User user : userList) {
+         		            sb.append("<th scope=\"row\">"+idx+"</th><td>"+user.getUserId()+"</td> <td>"+user.getName()+"</td> <td>"+user.getEmail()+"</td><td><a href=\"#\" class=\"btn btn-success\" role=\"button\">수정</a></td></tr>");
+         		            idx++;
+         		        }
+
+         		        String fileData = new String(Files.readAllBytes(new File("./webapp" + httpUrl).toPath()) );
+         		        fileData = fileData.replace("%user_list%", URLDecoder.decode(sb.toString(), "UTF-8"));
+
+         		        DataOutputStream dos = new DataOutputStream(out);
+         		        byte[] body = fileData.getBytes();
+         		        response200Header(dos, body.length);
+         		        responseBody(dos, body); */
             		}
             
             	}
-            		
             	
             	
             		else {
-                	DataOutputStream dos = new DataOutputStream(out);
-                	byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
-                	response200Header(dos, body.length);
-                    responseBody(dos, body);
-                    
+            			//요구사항 7번
+            			DataOutputStream dos = new DataOutputStream(out);	
+            			byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
+            			 
+            		       response200HeaderCss(dos, body.length);
+            		   
+            		 responseBody(dos, body);
+                	
             	}
             	
             	
@@ -210,6 +226,18 @@ public class RequestHandler extends Thread {
              dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
              dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
              // dos.writeBytes("Set-Cookie: logined=true");
+             dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+	
+	private void response200HeaderCss(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+             dos.writeBytes("HTTP/1.1 200 OK \r\n");
+             dos.writeBytes("Content-Type: text/css;charset=utf-8\r\n");
+             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            
              dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
