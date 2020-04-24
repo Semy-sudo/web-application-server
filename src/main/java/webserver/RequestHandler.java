@@ -118,22 +118,31 @@ public class RequestHandler extends Thread {
                 	}else {
                 		cookie = "logined=true";
                 		reurl ="/index.html";
-                	
                 		DataOutputStream dos = new DataOutputStream(out);
                     	response302HeaderA(dos,reurl,cookie);
                 	}
                
             	}else if(("/user/list".equals(httpUrl))) {
             		//요구사항6번 //사용자 목록 출력
-            		String cookie = "logined=true";
+            		String cookie = "";
+            		String reurl ="";
             		Map C =  HttpRequestUtils.parseCookies(cookie);
-            		System.out.println(C.get("logined"));
             		
-            		cookie = "logined=true";
-            		System.out.println(C.get("logined"));
-           
-            	
-            		
+            		if(Boolean.parseBoolean((String)C.get("logined"))==true) {
+            			
+            			reurl ="/user/html";
+            			DataOutputStream dos = new DataOutputStream(out);
+                    	response302HeaderA(dos,reurl,cookie);
+                    	//
+            			StringBuilder sb = new StringBuilder(user)
+                    	
+            		}else {
+            			reurl="login.html";
+            			DataOutputStream dos = new DataOutputStream(out);
+                    	response302HeaderB(dos,reurl);
+            			
+            		}
+            
             	}
             		
             	
@@ -222,6 +231,16 @@ public class RequestHandler extends Thread {
              dos.writeBytes("HTTP/1.1 302 OK \r\n");
 			 dos.writeBytes("Location:" +reurl+"\r\n");
 			 dos.writeBytes("Set-Cookie:"+cookie+"\r\n");
+             dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+	//요구사항 6번 //reurl
+	private void response302HeaderB(DataOutputStream dos, String reurl) {
+        try {
+             dos.writeBytes("HTTP/1.1 302 OK \r\n");
+			 dos.writeBytes("Location:" +reurl+"\r\n");
              dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
