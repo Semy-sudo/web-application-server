@@ -123,7 +123,7 @@ public class RequestHandler extends Thread {
                 		DataOutputStream dos = new DataOutputStream(out);
                     	response302HeaderA(dos,reurl,cookie);
                 	}
-               
+               //ㅇㅇㅇ
             	}else if(("/user/list".equals(httpUrl))) {
             		//요구사항6번 //사용자 목록 출력
             		String cookie = "";
