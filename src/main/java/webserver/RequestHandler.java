@@ -1,7 +1,7 @@
 
 package webserver;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
+
 import java.io.DataOutputStream;	
 import java.io.File;
 
@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;	
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+
 import java.net.Socket;	
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -41,10 +41,6 @@ public class RequestHandler extends Thread {
             try(InputStream in = connection.getInputStream(); OutputStream out= connection.getOutputStream()){
             	BufferedReader br = new BufferedReader(new InputStreamReader(in,"UTF-8"));
             	
-            	//
-            	BufferedWriter brr = new BufferedWriter(new OutputStreamWriter(out,"UTF-8"));
-            	
-            	
             	
             	
             	String firstLine = br.readLine();
@@ -74,7 +70,7 @@ public class RequestHandler extends Thread {
             	//contentLength 길이 알아내기
             	int contentLength = 0;
             	while(!firstLine.equals("")) {
-            		log.debug("body : {}", firstLine);
+            		log.debug("Header : {}", firstLine);
                 	firstLine = br.readLine();
                 	
             		 if(firstLine.contains("Content-Length")) {
@@ -88,30 +84,66 @@ public class RequestHandler extends Thread {
            	 	// /user/create 요청이 들어왔을때
             	if(("/user/create".equals(httpUrl))) {
             		String body = IOUtils.readData(br, contentLength);
-            		log.debug("body:{}",body);
+            		log.debug("Header:{}",body);
             		Map<String, String> r  = HttpRequestUtils.parseQueryString(body);//{ 정보들...   }
                 	
                 	User user = new User(r.get("userId"),r.get("password"),r.get("name"),r.get("email"));
                 	//System.out.println("user"+user);
                 	log.debug("User : {} ",user);
+                	DataBase.addUser(user);
                 	
                 	//요구사항4번
-                	//httpUrl = "/index.html";
+                	
                 	DataOutputStream dos = new DataOutputStream(out);
-                	 
                 	response302Header(dos);
-                   
+                	
                     
-            	}else {
-
+            	}else if(("/user/login".equals(httpUrl))){
+            		//요구사항5번
+            		String body = IOUtils.readData(br, contentLength);
+            		log.debug("user:{}",body);
+            		Map<String, String> r  = HttpRequestUtils.parseQueryString(body);//{ 정보들...   }
+                	
+                	User existuser = DataBase.findUserById("syi9595");
+                	
+                	log.debug("existUser : {} ",existuser);
+                	String cookie = "";
+                	String reurl="";
+                	if(existuser == null || !existuser.getPassword().equals(r.get("password"))) {
+                		cookie = "logined=false";
+                		reurl = "/user/login_failed.html";
+                		DataOutputStream dos = new DataOutputStream(out);
+                    	response302HeaderA(dos,reurl,cookie);
+                		
+                	}else {
+                		cookie = "logined=true";
+                		reurl ="/index.html";
+                	
+                		DataOutputStream dos = new DataOutputStream(out);
+                    	response302HeaderA(dos,reurl,cookie);
+                	}
+               
+            	}else if(("/user/list".equals(httpUrl))) {
+            		//요구사항6번 //사용자 목록 출력
+            		String cookie = "logined=true";
+            		Map C =  HttpRequestUtils.parseCookies(cookie);
+            		System.out.println(C.get("logined"));
+            		
+            		cookie = "logined=true";
+            		System.out.println(C.get("logined"));
+           
+            	
+            		
+            	}
+            		
+            	
+            	
+            		else {
                 	DataOutputStream dos = new DataOutputStream(out);
                 	byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
-                	
                 	response200Header(dos, body.length);
                     responseBody(dos, body);
                     
-            		
-            		
             	}
             	
             	
@@ -161,29 +193,41 @@ public class RequestHandler extends Thread {
 
 	return null;
 }
+	//상태코드200과 content length 전달해서 정상적으로 요청이진행되었음을 알려주도록 처리하는 메소드
+	
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
              dos.writeBytes("HTTP/1.1 200 OK \r\n");
              dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
              dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-           
+             // dos.writeBytes("Set-Cookie: logined=true");
              dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
-	//요구사항 4번
+	//요구사항 4번 //url 임시이동가능
 	private void response302Header(DataOutputStream dos) {
         try {
              dos.writeBytes("HTTP/1.1 302 OK \r\n");
-             //새 url에 대해 두번째 요청을 작성
-             dos.writeBytes("Location:  index.html \r\n");
+			 dos.writeBytes("Location: /index.html\r\n");
              dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
-
+	//요구사항 5번 //reurl,cookie
+	private void response302HeaderA(DataOutputStream dos, String reurl, String cookie) {
+        try {
+             dos.writeBytes("HTTP/1.1 302 OK \r\n");
+			 dos.writeBytes("Location:" +reurl+"\r\n");
+			 dos.writeBytes("Set-Cookie:"+cookie+"\r\n");
+             dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+	
     private void responseBody(DataOutputStream dos, byte[] body) {
         try {
              dos.write(body, 0, body.length);
