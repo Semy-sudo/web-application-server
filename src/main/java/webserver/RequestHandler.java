@@ -134,7 +134,7 @@ public class RequestHandler extends Thread {
             			DataOutputStream dos = new DataOutputStream(out);
                     	response302HeaderA(dos,reurl,cookie);
                     	//
-            			StringBuilder sb = new StringBuilder(user)
+            			//StringBuilder sb = new StringBuilder(user)
                     	
             		}else {
             			reurl="login.html";
