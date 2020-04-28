@@ -36,6 +36,8 @@ public class RequestHandler extends Thread {
 ////코드 수정
    
    
+	
+
 	public void run() {
         log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
                 connection.getPort());
@@ -55,6 +57,12 @@ public class RequestHandler extends Thread {
                 String httpMethod     = arrFirstLine[0];
                 String httpUrl        = arrFirstLine[1].equals("/")?"/index.html":arrFirstLine[1];
                 String httpProtocol   = arrFirstLine[2];
+                
+                Boolean what = null ;
+                
+               
+                
+                
                 log.debug("httpUrl: {}", httpUrl);
                 /*
                 while(!firstLine.equals("")) {
@@ -67,7 +75,7 @@ public class RequestHandler extends Thread {
             	System.out.println("arrFistLine[1]: "+httpUrl);
             	System.out.println("arrFistLine[2]: "+httpProtocol);
                 
-            	
+            	String cookie = "";
             	//요구사항2번//3번
             	//contentLength 길이 알아내기
             	int contentLength = 0;
@@ -82,6 +90,8 @@ public class RequestHandler extends Thread {
             		 }
             		
             	}
+            	
+            	
             	
            	 	// /user/create 요청이 들어왔을때
             	if(("/user/create".equals(httpUrl))) {
@@ -100,7 +110,9 @@ public class RequestHandler extends Thread {
                 	response302Header(dos);
                 	
                     
-            	}else if(("/user/login".equals(httpUrl))){
+            	}
+            	
+            	if(("/user/login".equals(httpUrl))){
             		//요구사항5번
             		String body = IOUtils.readData(br, contentLength);
             		log.debug("user:{}",body);
@@ -109,86 +121,106 @@ public class RequestHandler extends Thread {
                 	User existuser = DataBase.findUserById("syi9595");
                 	
                 	log.debug("existUser : {} ",existuser);
-                	String cookie = "";
+                	
                 	String reurl="";
                 	if(existuser == null || !existuser.getPassword().equals(r.get("password"))) {
                 		cookie = "logined=false";
                 		reurl = "/user/login_failed.html";
+                		
                 		DataOutputStream dos = new DataOutputStream(out);
                     	response302HeaderA(dos,reurl,cookie);
+                	
                 		
                 	}else {
                 		cookie = "logined=true";
-                		reurl ="/index.html";
+                		reurl="/index.html";
+                		
+                		
+                		System.out.println(what);
                 		DataOutputStream dos = new DataOutputStream(out);
                     	response302HeaderA(dos,reurl,cookie);
                 	}
-               //ㅇㅇㅇ
-            	}else if(("/user/list".equals(httpUrl))) {
-            		//요구사항6번 //사용자 목록 출력
-            		String cookie = "";
-            		String reurl ="";
-            		Map C =  HttpRequestUtils.parseCookies(cookie);
-            		
-            		if(Boolean.parseBoolean((String)C.get("logined"))==false) {
-            			//로그인 실패시
-            			reurl="login.html";
-            			DataOutputStream dos = new DataOutputStream(out);
-                    	response302HeaderB(dos,reurl);
-            			
-            		}else {
-            		    //로그인 성공시
-                    	/*
-
-         		        Collection<User> userList = DataBase.findAll();
-         		        StringBuilder sb = new StringBuilder();
-         		        sb.append("<tr>");
-         		        for(User user : userList) {
-         		            sb.append("<th scope=\"row\">"+idx+"</th><td>"+user.getUserId()+"</td> <td>"+user.getName()+"</td> <td>"+user.getEmail()+"</td><td><a href=\"#\" class=\"btn btn-success\" role=\"button\">수정</a></td></tr>");
-         		            idx++;
-         		        }
-
-         		        String fileData = new String(Files.readAllBytes(new File("./webapp" + httpUrl).toPath()) );
-         		        fileData = fileData.replace("%user_list%", URLDecoder.decode(sb.toString(), "UTF-8"));
-
-         		        DataOutputStream dos = new DataOutputStream(out);
-         		        byte[] body = fileData.getBytes();
-         		        response200Header(dos, body.length);
-         		        responseBody(dos, body); */
-            		}
+              
+            	
             
             	}
             	
-            	
-            		else {
-            			//요구사항 7번
-            			DataOutputStream dos = new DataOutputStream(out);	
-            			byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
-            			 
-            		       response200HeaderCss(dos, body.length);
-            		   
-            		 responseBody(dos, body);
-                	
-            	}
-            	
-            	
-            	
-            	/*
-            	if(("/user/login.html".equals(httpUrl))) {
-            		if() {
-            			
-            			httpUrl = "/index.html";
+            	if(("/user/list".equals(httpUrl))) {
+            		String reurl = "";
+            		
+            		//요구사항 6번 
+            		//로그인이 되면 list로 url 이동
+            		
+            		Map<String, String> UserList = HttpRequestUtils.parseCookies(cookie);
+            		
+            		
+            		//if(Boolean.parseBoolean(UserList.get("logined")==true)) {
+            		if(true) {
+            			//사용자 목록 출력하는 HTML 동적 생성 후 응답 보내기
+            			Collection<User> userList = DataBase.findAll();
+          		        StringBuilder sb = new StringBuilder();//이용해 동적html
+          		        
+          		        sb.append("<table border='1'>");
+          		        sb.append("<tr>");
+          		        sb.append("<th>아이디</th>");
+        		    	sb.append("<th>이름</th>");
+        		    	sb.append("<th>이메일</th>");
+        		    	sb.append("</tr>");
+          		      for (User user: userList) {
+          		    	sb.append("<tr>");
+          		    	sb.append("<td>"+user.getUserId()+"</td>");
+          		    	sb.append("<td>"+user.getName()+"</td>");
+          		    	sb.append("<td>"+user.getEmail()+"</td>");
+          		    	sb.append("</tr>");
+          		      }
+          		        sb.append("</table>");
+          		        
+                		byte[] body = sb.toString().getBytes();//문자열을 바이트코드로 인코딩
+                		//byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
+                		//httpUrl에 해당하는 파일을 바이트로 읽어들인다
+                		DataOutputStream dos = new DataOutputStream(out);	
+                		response200Header(dos, body.length);
+               		    responseBody(dos, body);
+                   		
             		}else {
             			
-            			httpUrl = "/user/login_failed.html";
+            			reurl = "/user/login.html";
+            			
+            			DataOutputStream dos = new DataOutputStream(out);	
+            			response302HeaderB(dos, reurl);
+            			
+            			
             		}
             		
+            		
             	}
-               */
             	
             	
             	
-                
+            	 if(httpUrl.endsWith("css")) {
+             		//요구사항7번
+             		DataOutputStream dos = new DataOutputStream(out);	
+         			byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
+         			
+         		 response200HeaderCss(dos, body.length);
+         		    
+         		 responseBody(dos, body);
+             		
+             	}
+            	
+            	 else {
+            		DataOutputStream dos = new DataOutputStream(out);	
+        			byte[] body = Files.readAllBytes(new File("./webapp"+httpUrl).toPath()); 
+        			
+        			
+        		 response200Header(dos, body.length);
+        		    
+        		 responseBody(dos, body);
+            	 
+            	
+            	 }
+            	
+            	
             }catch(IOException e) {
             	e.printStackTrace();
             }
@@ -199,6 +231,8 @@ public class RequestHandler extends Thread {
 	Map<String,String> headers = new HashMap<String, String>();
 
 	private int getContentLength(String firstLine) {
+		
+		
 		
 	String[] Stringline = firstLine.split(":");
 	
@@ -231,7 +265,7 @@ public class RequestHandler extends Thread {
             log.error(e.getMessage());
         }
     }
-	
+	//요구사항 7번 css 적용
 	private void response200HeaderCss(DataOutputStream dos, int lengthOfBodyContent) {
         try {
              dos.writeBytes("HTTP/1.1 200 OK \r\n");
