@@ -183,7 +183,7 @@ public class RequestHandler extends Thread {
                		    responseBody(dos, body);
                    		
             		}else {
-            			
+            			//필요없는
             			reurl = "/user/login.html";
             			
             			DataOutputStream dos = new DataOutputStream(out);	
